@@ -2,8 +2,7 @@
 Pipeline - Mineracaoo de textos
 
 python3 -m venv .venv
-pip install sentence-transformers scikit-learn pandas numpy
-
+pip install ollama pydantic sentence-transformers scikit-learn pandas numpy
 
 Teste de 20k
 
