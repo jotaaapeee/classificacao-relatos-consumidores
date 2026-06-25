@@ -29,7 +29,7 @@ RESUMO
 
 
 
-Teste de 40k
+Teste de 200k
 
 Treino: 163,224 | Teste: 40,807
 --- Logistic Regression ---
