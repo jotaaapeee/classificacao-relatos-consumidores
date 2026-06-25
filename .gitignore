@@ -8,6 +8,7 @@ __pycache__/
 
 # Data
 dados2025.json
+embeddings_20k.npy
 
 # Distribution / packaging
 .Python
@@ -219,3 +220,4 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+embeddings_20k.npy
