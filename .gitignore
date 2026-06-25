@@ -10,8 +10,10 @@ __pycache__/
 dados2025.json
 embeddings_20k.npy
 embeddings_3class_20k.npy
+embeddings_2class_20k.npy
 embeddings_full.npy
 embeddings_3class_full.npy
+embeddings_2class_full.npy
 
 # Distribution / packaging
 .Python

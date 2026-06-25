@@ -11,11 +11,11 @@ from sklearn.metrics import classification_report, f1_score
 
 # CONFIG
 CAMINHO_JSON = "dados2025.json"
-N_AMOSTRAS = 10_000 # para rodar na apresentacao
+# N_AMOSTRAS = 20_000 # para rodar na apresentacao
 SEED = 42
 MODEL_NAME = "paraphrase-multilingual-mpnet-base-v2"
-EMB_SAVE_PATH = "embeddings_10k.npy"
-# EMB_SAVE_PATH = "embeddings_full.npy"
+# EMB_SAVE_PATH = "embeddings_2class_20k.npy"
+EMB_SAVE_PATH = "embeddings_2class_full.npy"
 
 print("=" * 55)
 print("ETAPA 1 — Carregamento e amostragem")
@@ -28,7 +28,7 @@ df_full = pd.DataFrame(data)
 print(f"Dataset completo: {len(df_full):,} registros")
 print(df_full["status"].value_counts().to_string())
 
-# N_AMOSTRAS = len(df_full)
+N_AMOSTRAS = len(df_full)
 
 # Amostragem estratificada
 grupos = []
@@ -71,7 +71,7 @@ if os.path.exists(EMB_SAVE_PATH):
     embeddings = np.load(EMB_SAVE_PATH)
 else:
     print(f"Modelo: {MODEL_NAME}")
-    print("Vetorizando... (pode demorar alguns minutos no notebook)")
+    print("Vetorizando...")
     model = SentenceTransformer(MODEL_NAME)
     embeddings = model.encode(
         df["texto"].tolist(),

@@ -33,7 +33,7 @@ class FeaturasRelato(BaseModel):
 
 # config
 CAMINHO_JSON = "dados2025.json"
-EMB_SAVE_PATH = "embeddings_full.npy" # gerado na etapa 3
+EMB_SAVE_PATH = "embeddings_3class_full.npy" # gerado na etapa 3
 N_SUBAMOSTRA = 500 # linhas para extração LLM
 # N_SUBAMOSTRA = 10 # linhas para extração LLM
 SEED = 42
@@ -67,7 +67,7 @@ def extrair_features(relato: str) -> dict | None:
 
         # extrai só o JSON caso o modelo adicione texto extra
         start = raw.find("{")
-        end   = raw.rfind("}") + 1
+        end = raw.rfind("}") + 1
         if start == -1 or end == 0:
             return None
 
@@ -104,9 +104,23 @@ with open(CAMINHO_JSON, "r", encoding="utf-8") as f:
 
 df_full = pd.DataFrame(data)
 
+# converte nota para numérico e cria label de 3 classes (0=Neg,1=Neutro,2=Pos)
+df_full["nota_num"] = pd.to_numeric(df_full.get("nota", None), errors="coerce")
+df_full = df_full[df_full["nota_num"].isin([1, 2, 3, 4, 5])].copy()
+
+def mapear_label(nota):
+    if nota <= 2:
+        return 0
+    elif nota == 3:
+        return 1
+    else:
+        return 2
+
+df_full["label"] = df_full["nota_num"].apply(mapear_label)
+
 grupos = []
-for status, grupo in df_full.groupby("status"):
-    n = round(20_000 * len(grupo) / len(df_full))
+for label, grupo in df_full.groupby("label"):
+    n = round(N_SUBAMOSTRA * len(grupo) / len(df_full))
     grupos.append(grupo.sample(n=n, random_state=SEED))
 
 df = pd.concat(grupos).reset_index(drop=True)
@@ -118,7 +132,8 @@ def limpar_texto(texto):
     return re.sub(r"\s+", " ", texto).strip()
 
 df["texto"] = df["relato"].apply(limpar_texto)
-df["label"] = (df["status"] == "Resolvido").astype(int)
+# df["label"] = (df["status"] == "Resolvido").astype(int)
+print(df["label"].value_counts().rename({0: "Negativo (0)", 1: "Neutro (1)", 2: "Positivo (2)"}).to_string())
 
 embeddings = np.load(EMB_SAVE_PATH)
 print(f"Dataset: {len(df):,} linhas | Embeddings: {embeddings.shape}")
@@ -152,9 +167,9 @@ print(f"\nExtraídos: {len(features_list)} | Erros/ignorados: {erros}")
 df_feat = pd.DataFrame(features_list).set_index("df_idx")
 
 idxs_validos = df_feat.index.tolist()
-emb_sub   = embeddings[idxs_validos]
+emb_sub = embeddings[idxs_validos]
 labels_sub = df.loc[idxs_validos, "label"].values
-feat_vecs  = np.array([features_para_vetor(row) for row in df_feat.to_dict("records")])
+feat_vecs = np.array([features_para_vetor(row) for row in df_feat.to_dict("records")])
 
 X_combined = np.hstack([emb_sub, feat_vecs])
 X_emb_only = emb_sub
@@ -172,13 +187,16 @@ for nome, X in [("Embedding puro", X_emb_only), ("Embedding + LLM features", X_c
     y_pred = clf.predict(X_te)
     f1 = f1_score(y_te, y_pred, average="weighted")
     print(f"\n--- {nome} (F1 weighted: {f1:.4f}) ---")
-    print(classification_report(y_te, y_pred, target_names=["Não Resolvido", "Resolvido"]))
+    print(classification_report(
+        y_te,
+        y_pred,
+        target_names=["Negativo", "Neutro", "Positivo"],
+        zero_division=0,
+    ))
 
 print("=" * 55)
 print("Distribuição das features extraídas pelo LLM")
 print("=" * 55)
 for col in ["categoria_problema", "tom", "complexidade"]:
-    print(f"\n{col}:")
-    print(df_feat[col].value_counts().to_string())
-
-print("\nEtapa LLM + Pydantic concluída.")
+    # print(f"\n{col}:")
+    print(f"\n", df_feat[col].value_counts().to_string())
