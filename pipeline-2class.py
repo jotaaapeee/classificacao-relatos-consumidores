@@ -3,14 +3,13 @@ import re
 import json
 import numpy as np
 import pandas as pd
+from sentence_transformers import SentenceTransformer
 from sklearn.svm import LinearSVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
-from sentence_transformers import SentenceTransformer
 from sklearn.metrics import classification_report, f1_score
 
 # CONFIG
-
 CAMINHO_JSON = "dados2025.json"
 N_AMOSTRAS = 10_000 # para rodar na apresentacao
 SEED = 42
