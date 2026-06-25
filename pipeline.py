@@ -12,10 +12,11 @@ from sklearn.metrics import classification_report, f1_score
 # CONFIG
 
 CAMINHO_JSON = "dados2025.json"
-N_AMOSTRAS = 20_000
+N_AMOSTRAS = 10_000 # para rodar na apresentacao
 SEED = 42
 MODEL_NAME = "paraphrase-multilingual-mpnet-base-v2"
-EMB_SAVE_PATH = "embeddings_20k.npy"
+EMB_SAVE_PATH = "embeddings_10k.npy"
+# EMB_SAVE_PATH = "embeddings_full.npy"
 
 print("=" * 55)
 print("ETAPA 1 — Carregamento e amostragem")
@@ -27,6 +28,8 @@ with open(CAMINHO_JSON, "r", encoding="utf-8") as f:
 df_full = pd.DataFrame(data)
 print(f"Dataset completo: {len(df_full):,} registros")
 print(df_full["status"].value_counts().to_string())
+
+# N_AMOSTRAS = len(df_full)
 
 # Amostragem estratificada
 grupos = []

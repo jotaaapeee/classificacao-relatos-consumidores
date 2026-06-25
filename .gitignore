@@ -9,6 +9,7 @@ __pycache__/
 # Data
 dados2025.json
 embeddings_20k.npy
+embeddings_full.npy
 
 # Distribution / packaging
 .Python
