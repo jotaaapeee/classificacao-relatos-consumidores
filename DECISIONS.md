@@ -1,4 +1,4 @@
-# DECISOES.md — Classificação de Relatos do Consumidor
+# DECISOES.md, Classificação de Relatos do Consumidor
 
 ## Visão Geral
 
@@ -8,11 +8,11 @@ Pipeline de classificação supervisionada (Caminho B) aplicado ao dataset públ
 
 ## 1. Escolha do Dataset
 
-**Decisão:** consumidores.gov.br (204k reclamações em PT-BR)
+**Decisão:** consumidores.gov.br (204k reclamações em PT-BR) https://www.kaggle.com/datasets/beatrizmsarmento/relatos-de-consumidores-do-site-consumidor-gov-br
 
 **Motivo:**
-- Corpus público, em português, com rótulos naturais (coluna `nota` e `status`)
-- Volume muito acima do mínimo exigido (500 documentos)
+- Corpus público, em português, com rótulos naturais (coluna `nota`)
+- Volume muito acima do mínimo exigido (500 documentos), cada linha do dataset é um documento (um relato = um texto)
 - Domínio rico para extração de features semânticas via LLM
 
 ---
@@ -24,9 +24,9 @@ Pipeline de classificação supervisionada (Caminho B) aplicado ao dataset públ
 - `1 = Neutro` (nota 3)
 - `2 = Positivo` (nota 4–5)
 
-**Motivo:** o enunciado exige mínimo de 3 rótulos. A coluna `status` (Resolvido / Não Resolvido) foi usada para validação do pipeline binário auxiliar.
+**Motivo:** o enunciado exige mínimo de 3 rótulos.
 
-**Trade-off:** a classe Neutro é minoritária (~13k de 204k registros), o que gera F1 baixo nessa classe. Mitigado com `class_weight='balanced'`.
+**Trade-off:** a classe Neutro é minoritária (~13k de 204k registros). Solução adotada: undersampling balanceado (ver seção 4).
 
 ---
 
@@ -44,39 +44,35 @@ Pipeline de classificação supervisionada (Caminho B) aplicado ao dataset públ
 
 ---
 
-## 4. Estratégia de Amostragem
+## 4. Estratégia de Amostragem, Undersampling Balanceado
 
-**Decisão:** amostragem estratificada por label
+**Decisão:** undersampling balanceado com 5.000 registros por classe (15.000 total)
 
-**Notebook (desenvolvimento):** 10–20k amostras
-**PC (produção):** dataset completo ~200k amostras
+**Motivo:** o dataset original é desbalanceado (~105k Positivos, ~84k Negativos, ~13k Neutros). Com amostragem proporcional, o modelo ignorava completamente a classe Neutro (F1 = 0.00). O undersampling nivelar pelo Neutro resolve o desbalanceamento sem precisar de `class_weight='balanced'`, tornando as métricas mais confiáveis e comparáveis entre classes.
 
-**Motivo:** o notebook (Ryzen 7 5825u, 16GB RAM, sem GPU) não suporta vetorização de 200k registros em tempo razoável. Os embeddings são gerados no PC (RTX 3060 12GB) e salvos em `.npy` para uso no notebook.
+**Comparação:**
+| Estratégia | F1 Neutro | F1 weighted |
+|---|---|---|
+| Proporcional (desbalanceado) | 0.00 | ~0.69 (enganoso) |
+| Undersampling 5k/classe | ~0.40 | ~0.46 (honesto) |
 
-**Implementação:** substituiu `groupby().apply()` por loop manual — incompatibilidade com pandas no Python 3.12/3.14.
+O F1 geral cai, mas passa a refletir o desempenho real nas 3 classes.
+
+**Implementação:** substituiu `groupby().apply()` por loop manual, incompatibilidade com pandas no Python 3.12/3.14.
 
 ---
 
 ## 5. Classificadores Baseline
 
-**Decisão:** Logistic Regression e LinearSVC com `class_weight='balanced'`
+**Decisão:** Logistic Regression e LinearSVC
 
-**Motivo:**
-- Modelos lineares funcionam bem sobre embeddings densos
-- `class_weight='balanced'` compensa o desbalanceamento da classe Neutro
-- Permitem comparação direta antes e depois da adição de features do LLM
+**Motivo:** modelos lineares funcionam bem sobre embeddings densos e permitem comparação direta antes e depois da adição de features do LLM.
 
-**Resultados (200k, 3 classes):**
+**Resultados, baseline 3 classes (balanceado, 15k):**
 | Modelo | F1 weighted |
 |---|---|
-| Logistic Regression | ~0.69 |
-| LinearSVC | ~0.69 |
-
-**Resultados (binário — Resolvido / Não Resolvido, referência):**
-| Modelo | 20k F1 | 200k F1 |
-|---|---|---|
-| Logistic Regression | 0.6812 | 0.6909 |
-| LinearSVC | 0.6809 | 0.6935 |
+| Logistic Regression | 0.4619 |
+| LinearSVC | 0.4637 |
 
 ---
 
@@ -86,12 +82,13 @@ Pipeline de classificação supervisionada (Caminho B) aplicado ao dataset públ
 
 **Motivo:**
 - Gratuito, sem limite de tokens
-- RTX 3060 12GB suporta o modelo (3B parâmetros, ~2GB em VRAM)
 - Privacidade dos dados (sem envio para APIs externas)
 
-**Trade-off:** Ollama 0.24.0 não detecta GPU automaticamente — atualizado para 0.9.x para habilitar CUDA.
+**Trade-off:** No notebook (CPU), velocidade lenta inviabilizou 500 relatos, usado N=50 na demo ao vivo, com resultados do PC (N=500) carregados de arquivo.
 
-**Limitação:** extração aplicada em subamostra de 500 relatos por custo computacional. Taxa de erro de JSON malformado: 5.6% (28/500).
+**Taxa de erro (JSON malformado):**
+- 500 relatos no PC (GPU): 36/500 = 7.2%
+- 50 relatos no notebook (CPU): 2/50 = 4.0%
 
 ---
 
@@ -104,32 +101,44 @@ Pipeline de classificação supervisionada (Caminho B) aplicado ao dataset públ
 - `menciona_prazo`: bool
 - `complexidade`: baixa / média / alta
 
-**Motivo da escolha dos campos:** cobrem as dimensões semânticas mais relevantes para prever resolução — tipo do problema, urgência emocional e complexidade operacional.
+**Motivo da escolha dos campos:** cobrem as dimensões semânticas mais relevantes para prever satisfação, tipo do problema, urgência emocional e complexidade operacional.
 
-**Resultado:** adição das features LLM melhorou F1 de 0.4874 → 0.5361 na subamostra de 3 classes (+0.049).
+**Resultado (500 relatos, dataset balanceado 3 classes):**
+| Configuração | F1 weighted |
+|---|---|
+| Embedding puro | 0.3189 |
+| Embedding + LLM features | 0.4058 |
+
+Ganho de +0.087 com a adição das features do LLM.
 
 ---
 
-## 8. Salvamento de Artefatos
+## 8. Tokenização e Representação Semântica
+
+**Tokenização:** o modelo `paraphrase-multilingual-mpnet-base-v2` usa tokenização WordPiece (mesmo estilo do BERT), que quebra o texto em subpalavras. Exemplo: "cancelamento" → `["cancel", "##amento"]`. Isso permite que o modelo lide com palavras desconhecidas e variações morfológicas do português.
+
+**Captura de contexto:** o modelo usa atenção bidirecional, o vetor de cada token é influenciado por todos os outros tokens da frase. O embedding final de 768 dimensões representa o significado do texto inteiro, não palavras isoladas. Isso é o diferencial em relação a abordagens como TF-IDF, onde cada termo é tratado de forma independente.
+
+**Exemplo prático:** "produto não chegou" e "entrega atrasada" geram embeddings próximos no espaço vetorial mesmo sem compartilhar palavras, porque o modelo captura a equivalência semântica entre as duas frases.
+
+---
+
+## 9. Limpeza de Texto
+
+**Decisão:** limpeza mínima, remoção de URLs e normalização de espaços
+
+**Motivo:** o dataset do consumidores.gov.br já vem bem estruturado e limpo. Os relatos são textos escritos por consumidores em um formulário web, o que naturalmente reduz ruído (sem gírias extremas, sem emojis em massa, sem HTML). Não foi necessário aplicar stemming, remoção de stopwords ou normalização agressiva, técnicas que poderiam remover informação semântica relevante para o embedding.
+
+**Trade-off:** uma limpeza mais agressiva poderia beneficiar abordagens baseadas em frequência (TF-IDF, BoW), mas prejudicaria modelos de embedding contextual que dependem da estrutura linguística do texto.
+
+---
+
+## 10. Salvamento de Artefatos
 
 **Decisão:** embeddings e features LLM salvos em disco antes da apresentação
 
 | Artefato | Arquivo |
 |---|---|
-| Embeddings 20k (binário) | `embeddings_20k.npy` |
-| Embeddings 3 classes 20k | `embeddings_3class_20k.npy` |
-| Embeddings 200k | `embeddings_200k.npy` |
-| Features LLM | `features_llm.csv` |
+| Embeddings 3 classes balanceado | `embeddings_3class_balanced.npy` |
 
 **Motivo:** evita recomputação durante a demo ao vivo no notebook.
-
----
-
-## 9. O que ficou de fora (e por quê)
-
-| Item | Motivo |
-|---|---|
-| RAG (FAISS/ChromaDB) | Identificado como bônus, não implementado por escopo |
-| Interface Streamlit/Gradio | Bônus, não implementado por escopo |
-| DeepL / Google Translate | Descartado — dataset já está em PT-BR |
-| Dataset Reddit (150k relatos em inglês) | Substituído pelo consumidores.gov.br para evitar tradução e usar rótulos naturais |

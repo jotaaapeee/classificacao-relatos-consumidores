@@ -34,8 +34,8 @@ class FeaturasRelato(BaseModel):
 # config
 CAMINHO_JSON = "dados2025.json"
 EMB_SAVE_PATH = "embeddings_3class_balanced.npy" # gerado na etapa 3
-N_SUBAMOSTRA = 50 # linhas para extração LLM
-# N_SUBAMOSTRA = 10 # linhas para extração LLM
+N_SUBAMOSTRA = 500 # gpu
+# N_SUBAMOSTRA = 50 # cpu
 SEED = 42
 OLLAMA_MODEL = "llama3.2"
 
@@ -204,5 +204,4 @@ print("=" * 55)
 print("Distribuição das features extraídas pelo LLM")
 print("=" * 55)
 for col in ["categoria_problema", "tom", "complexidade"]:
-    # print(f"\n{col}:")
     print(f"\n", df_feat[col].value_counts().to_string())

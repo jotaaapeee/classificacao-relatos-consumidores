@@ -16,7 +16,7 @@ MODEL_NAME = "paraphrase-multilingual-mpnet-base-v2"
 EMB_SAVE_PATH = "embeddings_3class_balanced.npy"
 
 print("=" * 55)
-print("ETAPA 1 — Carregamento e undersampling balanceado")
+print("ETAPA 1 - Carregamento e undersampling balanceado")
 print("=" * 55)
 
 with open(CAMINHO_JSON, "r", encoding="utf-8") as f:
@@ -54,7 +54,7 @@ print(f"\nAmostra balanceada: {len(df):,} registros ({N_POR_CLASSE} por classe)"
 print(df["label"].value_counts().rename({0: "Negativo (0)", 1: "Neutro (1)", 2: "Positivo (2)"}).to_string())
 
 print("\n" + "=" * 55)
-print("ETAPA 2 — Pré-processamento")
+print("ETAPA 2 - Pré-processamento")
 print("=" * 55)
 
 def limpar_texto(texto):
@@ -72,7 +72,7 @@ print(f"\nDistribuição de labels:")
 print(df["label"].value_counts().rename({0: "Negativo (0)", 1: "Neutro (1)", 2: "Positivo (2)"}).to_string())
 
 print("\n" + "=" * 55)
-print("ETAPA 3 — Embeddings")
+print("ETAPA 3 - Embeddings")
 print("=" * 55)
 
 if os.path.exists(EMB_SAVE_PATH):
@@ -93,7 +93,7 @@ else:
 print(f"Shape dos embeddings: {embeddings.shape}")
 
 print("\n" + "=" * 55)
-print("ETAPA 4 — Baseline ML")
+print("ETAPA 4 - Baseline ML")
 print("=" * 55)
 
 X = embeddings
@@ -123,7 +123,7 @@ for nome, clf in modelos.items():
     ))
 
 print("\n" + "=" * 55)
-print("RESUMO — F1")
+print("RESUMO - F1")
 print("=" * 55)
 for nome, f1 in resultados_f1.items():
     print(f"  {nome}: {f1}")
