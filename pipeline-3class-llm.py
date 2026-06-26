@@ -1,14 +1,14 @@
 import re
 import json
 import time
-import pandas as pd
-import numpy as np
 import ollama
-from pydantic import BaseModel, field_validator
+import numpy as np
+import pandas as pd
 from typing import Literal
+from pydantic import BaseModel, field_validator
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import classification_report, f1_score
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import classification_report, f1_score
 
 # SCHEMA PYDANTIC
 class FeaturasRelato(BaseModel):
@@ -33,8 +33,8 @@ class FeaturasRelato(BaseModel):
 
 # config
 CAMINHO_JSON = "dados2025.json"
-EMB_SAVE_PATH = "embeddings_3class_full.npy" # gerado na etapa 3
-N_SUBAMOSTRA = 500 # linhas para extração LLM
+EMB_SAVE_PATH = "embeddings_3class_balanced.npy" # gerado na etapa 3
+N_SUBAMOSTRA = 50 # linhas para extração LLM
 # N_SUBAMOSTRA = 10 # linhas para extração LLM
 SEED = 42
 OLLAMA_MODEL = "llama3.2"
@@ -105,7 +105,7 @@ with open(CAMINHO_JSON, "r", encoding="utf-8") as f:
 df_full = pd.DataFrame(data)
 
 # converte nota para numérico e cria label de 3 classes (0=Neg,1=Neutro,2=Pos)
-df_full["nota_num"] = pd.to_numeric(df_full.get("nota", None), errors="coerce")
+df_full["nota_num"] = pd.to_numeric(df_full["nota"], errors="coerce")
 df_full = df_full[df_full["nota_num"].isin([1, 2, 3, 4, 5])].copy()
 
 def mapear_label(nota):
@@ -120,7 +120,7 @@ df_full["label"] = df_full["nota_num"].apply(mapear_label)
 
 grupos = []
 for label, grupo in df_full.groupby("label"):
-    n = round(N_SUBAMOSTRA * len(grupo) / len(df_full))
+    n = min(5_000, len(grupo))
     grupos.append(grupo.sample(n=n, random_state=SEED))
 
 df = pd.concat(grupos).reset_index(drop=True)
@@ -132,7 +132,6 @@ def limpar_texto(texto):
     return re.sub(r"\s+", " ", texto).strip()
 
 df["texto"] = df["relato"].apply(limpar_texto)
-# df["label"] = (df["status"] == "Resolvido").astype(int)
 print(df["label"].value_counts().rename({0: "Negativo (0)", 1: "Neutro (1)", 2: "Positivo (2)"}).to_string())
 
 embeddings = np.load(EMB_SAVE_PATH)
@@ -143,14 +142,17 @@ print(f"Extraindo features com LLM ({N_SUBAMOSTRA} relatos)...")
 print(f"Modelo: {OLLAMA_MODEL}")
 print("=" * 55)
 
-sub_idx = (
-    df.groupby("label", group_keys=False)
-    .apply(lambda x: x.sample(frac=N_SUBAMOSTRA / len(df), random_state=SEED))
-    .index.tolist()
-)
+grupos_sub = []
+for label, grupo in df.groupby("label"):
+    n = round(N_SUBAMOSTRA * len(grupo) / len(df))
+    grupos_sub.append(grupo.sample(n=n, random_state=SEED))
+
+sub_idx = pd.concat(grupos_sub).index.tolist()
 
 features_list = []
 erros = 0
+inicio = time.time()
+
 for i, idx in enumerate(sub_idx):
     feat = extrair_features(df.loc[idx, "texto"])
     if feat:
@@ -158,9 +160,13 @@ for i, idx in enumerate(sub_idx):
     else:
         erros += 1
 
-    if (i + 1) % 50 == 0:
-        print(f"  {i + 1}/{len(sub_idx)} | erros: {erros}")
-    time.sleep(0.05) # respira entre chamadas
+    if (i + 1) % 10 == 0:
+        decorrido = time.time() - inicio
+        media = decorrido / (i + 1)
+        restante = media * (len(sub_idx) - (i + 1))
+        print(f"  {i+1}/{len(sub_idx)} | erros: {erros} | {media:.1f}s/req | ~{restante/60:.1f}min restantes")
+
+    time.sleep(0.05)
 
 print(f"\nExtraídos: {len(features_list)} | Erros/ignorados: {erros}")
 

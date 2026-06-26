@@ -1,6 +1,6 @@
-import os
-import re
 import json
+import re
+import os
 import numpy as np
 import pandas as pd
 from sentence_transformers import SentenceTransformer
@@ -9,16 +9,14 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, f1_score
 
-# config
 CAMINHO_JSON = "dados2025.json"
-# N_AMOSTRAS = 10_000
+N_POR_CLASSE = 5_000 # undersampling balanceado
 SEED = 42
 MODEL_NAME = "paraphrase-multilingual-mpnet-base-v2"
-# EMB_SAVE_PATH = "embeddings_3class_20k.npy"
-EMB_SAVE_PATH = "embeddings_3class_full.npy"
+EMB_SAVE_PATH = "embeddings_3class_balanced.npy"
 
 print("=" * 55)
-print("ETAPA 1 — Carregamento e amostragem")
+print("ETAPA 1 — Carregamento e undersampling balanceado")
 print("=" * 55)
 
 with open(CAMINHO_JSON, "r", encoding="utf-8") as f:
@@ -44,17 +42,15 @@ df_full["label"] = df_full["nota_num"].apply(mapear_label)
 print(f"Dataset completo (após filtro): {len(df_full):,} registros")
 print(df_full["label"].value_counts().rename({0: "Negativo (0)", 1: "Neutro (1)", 2: "Positivo (2)"}).to_string())
 
-N_AMOSTRAS = len(df_full)
-
-# amostragem estratificada por label
+# undersampling balanceado
 grupos = []
 for label, grupo in df_full.groupby("label"):
-    n = round(N_AMOSTRAS * len(grupo) / len(df_full))
+    n = min(N_POR_CLASSE, len(grupo))  # respeita limite da classe minoritária
     grupos.append(grupo.sample(n=n, random_state=SEED))
 
-df = pd.concat(grupos).reset_index(drop=True)
+df = pd.concat(grupos).sample(frac=1, random_state=SEED).reset_index(drop=True)
 
-print(f"\nAmostra: {len(df):,} registros")
+print(f"\nAmostra balanceada: {len(df):,} registros ({N_POR_CLASSE} por classe)")
 print(df["label"].value_counts().rename({0: "Negativo (0)", 1: "Neutro (1)", 2: "Positivo (2)"}).to_string())
 
 print("\n" + "=" * 55)
@@ -109,8 +105,8 @@ X_train, X_test, y_train, y_test = train_test_split(
 print(f"Treino: {len(X_train):,} | Teste: {len(X_test):,}")
 
 modelos = {
-    "Logistic Regression": LogisticRegression(max_iter=1000, random_state=SEED, class_weight="balanced"),
-    "LinearSVC":           LinearSVC(max_iter=2000, random_state=SEED, class_weight="balanced"),
+    "Logistic Regression": LogisticRegression(max_iter=1000, random_state=SEED),
+    "LinearSVC": LinearSVC(max_iter=2000, random_state=SEED),
 }
 
 resultados_f1 = {}
@@ -127,7 +123,7 @@ for nome, clf in modelos.items():
     ))
 
 print("\n" + "=" * 55)
-print("RESUMO")
+print("RESUMO — F1")
 print("=" * 55)
 for nome, f1 in resultados_f1.items():
     print(f"  {nome}: {f1}")
