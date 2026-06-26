@@ -8,10 +8,10 @@ Projeto desenvolvido para a disciplina de **Mineração de Textos**, com o objet
 
 Construir um pipeline de classificação supervisionada capaz de identificar o sentimento de relatos de consumidores utilizando:
 
-* Embeddings semânticos
-* Modelos clássicos de Machine Learning
-* Extração de informações estruturadas por meio de um LLM executado localmente
-* Busca semântica por similaridade (RAG) com interface interativa
+* Embeddings semânticos;
+* Modelos clássicos de Machine Learning;
+* Extração de informações estruturadas por meio de um LLM executado localmente;
+* Busca semântica por similaridade (RAG) com interface interativa;
 
 Além da classificação tradicional, o projeto avalia se informações extraídas por um modelo de linguagem podem melhorar o desempenho do classificador.
 
