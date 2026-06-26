@@ -8,7 +8,7 @@ __pycache__/
 
 # Data
 dados2025.json
-embeddings_3class_balanced.npy
+*.npy
 
 # Distribution / packaging
 .Python

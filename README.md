@@ -221,8 +221,8 @@ Apesar das limitações observadas — especialmente na classificação da class
 ---
 
 ## Autores
-Letícia Ferreira Silva
-João Pedro Guervich 
-Eduardo
+* Letícia Ferreira Silva
+* João Pedro Guervich Varrichio
+* Eduardo
 
 Projeto desenvolvido para a disciplina de **Mineração de Textos**.
