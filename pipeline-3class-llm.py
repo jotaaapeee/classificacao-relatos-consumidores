@@ -39,20 +39,8 @@ N_SUBAMOSTRA = 500 # gpu
 SEED = 42
 OLLAMA_MODEL = "llama3.2"
 
-PROMPT_TEMPLATE = """Você é um analisador de reclamações de consumidores brasileiros.
-Analise o relato abaixo e responda APENAS com um JSON válido, sem explicações.
-
-Relato:
-\"\"\"{relato}\"\"\"
-
-Responda com este schema exato:
-{{
-  "categoria_problema": "cobrança indevida" | "produto com defeito" | "atraso na entrega" | "atendimento ruim" | "cancelamento" | "fraude" | "outro",
-  "tom": "neutro" | "frustrado" | "furioso" | "satisfeito",
-  "menciona_valor_financeiro": true | false,
-  "menciona_prazo": true | false,
-  "complexidade": "baixa" | "média" | "alta"
-}}"""
+with open("prompts/extracao_features.txt", "r", encoding="utf-8") as f:
+    PROMPT_TEMPLATE = f.read()
 
 def extrair_features(relato: str) -> dict | None:
     # chama o Ollama e valida a resposta com Pydantic.
