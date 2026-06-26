@@ -8,9 +8,10 @@ Projeto desenvolvido para a disciplina de **Mineração de Textos**, com o objet
 
 Construir um pipeline de classificação supervisionada capaz de identificar o sentimento de relatos de consumidores utilizando:
 
-* Embeddings semânticos;
-* Modelos clássicos de Machine Learning;
-* Extração de informações estruturadas por meio de um LLM executado localmente.
+* Embeddings semânticos
+* Modelos clássicos de Machine Learning
+* Extração de informações estruturadas por meio de um LLM executado localmente
+* Busca semântica por similaridade (RAG) com interface interativa
 
 Além da classificação tradicional, o projeto avalia se informações extraídas por um modelo de linguagem podem melhorar o desempenho do classificador.
 
@@ -41,13 +42,14 @@ Como a classe **Neutro** possui quantidade significativamente menor de exemplos,
 ## Tecnologias Utilizadas
 
 * Python
-* Pandas
-* NumPy
+* Pandas / NumPy
 * Scikit-Learn
 * Sentence Transformers
-* Ollama
-* Llama 3.2
+* FAISS
+* Ollama + Llama 3.2
 * Pydantic
+* Streamlit
+* Tiktoken
 
 ---
 
@@ -57,8 +59,9 @@ Como a classe **Neutro** possui quantidade significativamente menor de exemplos,
 .
 ├── pipeline-3class.py           # Pipeline utilizando apenas embeddings
 ├── pipeline-3class-llm.py       # Pipeline com embeddings + features do LLM
-├── custo.py                     # Utilitário de cálculo
-├── extract_feats.txt            # Prompt utilizado na extração
+├── app.py                       # Interface Streamlit com RAG
+├── custo.py                     # Estimativa de custo com Gemini API
+├── extract_feats.txt            # Prompt utilizado na extração de features
 ├── DECISIONS.md                 # Decisões de projeto
 ├── ERRORS_N_INSIGHTS.md         # Análise de erros e insights
 ├── LOGS.md                      # Resultados experimentais
@@ -72,28 +75,15 @@ Como a classe **Neutro** possui quantidade significativamente menor de exemplos,
 
 O fluxo do projeto é composto pelas seguintes etapas:
 
-1. Carregamento do dataset
-2. Balanceamento das classes
-3. Geração dos embeddings utilizando o modelo:
-
-```
-paraphrase-multilingual-mpnet-base-v2
-```
-
-4. Treinamento dos classificadores baseline:
-
-   * Logistic Regression
-   * LinearSVC
-
-5. Extração de features semânticas utilizando o Llama 3.2 via Ollama.
-
-6. Conversão das informações extraídas para variáveis estruturadas utilizando Pydantic.
-
-7. Concatenação das novas features aos embeddings.
-
-8. Novo treinamento dos classificadores.
-
-9. Comparação entre os resultados obtidos.
+1. Carregamento do dataset e undersampling balanceado (5k/classe)
+2. Pré-processamento (remoção de URLs, normalização de espaços)
+3. Geração dos embeddings com `paraphrase-multilingual-mpnet-base-v2`
+4. Treinamento dos classificadores baseline (Logistic Regression e LinearSVC)
+5. Extração de features semânticas via Llama 3.2 + Ollama
+6. Validação das saídas do LLM com schema Pydantic
+7. Concatenação das features aos embeddings e novo treinamento
+8. Comparação de resultados baseline vs. enriquecido com LLM
+9. Interface Streamlit com busca semântica por similaridade (RAG/FAISS)
 
 ---
 
@@ -131,6 +121,25 @@ A utilização das informações estruturadas extraídas pelo modelo de linguage
 
 ---
 
+## Interface Streamlit (RAG)
+
+O projeto inclui uma interface interativa que permite:
+
+* Digitar uma reclamação e obter a classificação automática (Negativo / Neutro / Positivo)
+* Visualizar os K relatos mais similares no corpus via busca semântica com FAISS
+* Explorar as empresas mais reclamadas no dataset
+
+Para executar:
+
+```bash
+pip install streamlit faiss-cpu sentence-transformers scikit-learn pandas numpy
+streamlit run app.py
+```
+
+O arquivo `embeddings_3class_balanced.npy` deve estar na mesma pasta do `app.py`.
+
+---
+
 ## Principais Decisões
 
 Durante o desenvolvimento foram tomadas algumas decisões importantes:
@@ -139,7 +148,8 @@ Durante o desenvolvimento foram tomadas algumas decisões importantes:
 * balanceamento por undersampling;
 * uso de embeddings multilíngues;
 * utilização do Llama 3.2 executado localmente;
-* validação das respostas do LLM utilizando Pydantic.
+* validação das respostas do LLM utilizando Pydantic;
+* RAG com FAISS sem LLM;
 
 As justificativas completas encontram-se no arquivo **DECISIONS.md**.
 
@@ -182,21 +192,24 @@ source .venv/bin/activate
 ### Instalar dependências
 
 ```bash
-pip install ollama pydantic sentence-transformers scikit-learn pandas numpy tiktoken
+pip install ollama pydantic sentence-transformers scikit-learn faiss-cpu pandas numpy tiktoken streamlit
 ```
 
 ### Executar o pipeline
 
-Sem LLM
-
+Pipeline sem LLM:
 ```bash
 python pipeline-3class.py
 ```
 
-Com LLM
-
+Pipeline com LLM:
 ```bash
 python pipeline-3class-llm.py
+```
+
+Interface Streamlit:
+```bash
+streamlit run app.py
 ```
 
 ---

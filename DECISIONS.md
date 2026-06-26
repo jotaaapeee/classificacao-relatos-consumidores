@@ -1,4 +1,4 @@
-# DECISOES.md, Classificação de Relatos do Consumidor
+# DECISOES.md - Classificação de Relatos do Consumidor
 
 ## Visão Geral
 
@@ -133,9 +133,28 @@ Ganho de +0.087 com a adição das features do LLM.
 
 ---
 
-## 10. Salvamento de Artefatos
+## 10. RAG — Recuperação por Similaridade Semântica
 
-**Decisão:** embeddings e features LLM salvos em disco antes da apresentação
+**Decisão:** RAG com FAISS (`IndexFlatL2`) sobre os 15k embeddings do corpus balanceado, integrado ao Streamlit
+
+**Motivo:**
+- Permite busca semântica sobre o corpus em tempo real
+- Complementa a classificação mostrando relatos reais similares ao input do usuário
+- FAISS é o padrão para RAG em produção, leve, rápido e sem dependência de servidor externo
+
+**Fluxo:**
+1. Usuário digita uma reclamação
+2. Texto é vetorizado com o mesmo `paraphrase-multilingual-mpnet-base-v2`
+3. FAISS busca os K vetores mais próximos por distância euclidiana (L2)
+4. Relatos similares são exibidos com nota, status e empresa
+
+**Por que sem LLM no RAG:** o Llama 3.2 foi testado localmente e mostrou ganho de F1, mas a latência no notebook inviabiliza uso interativo na demo. O FAISS sozinho entrega a experiência RAG em milissegundos.
+
+---
+
+## 11. Salvamento de Artefatos
+
+**Decisão:** embeddings salvos em disco antes da apresentação
 
 | Artefato | Arquivo |
 |---|---|
