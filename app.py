@@ -5,8 +5,6 @@ import pandas as pd
 import faiss
 import streamlit as st
 from sentence_transformers import SentenceTransformer
-from sklearn.linear_model import LogisticRegression
-from sklearn.svm import LinearSVC
 
 CAMINHO_JSON = "dados2025.json"
 EMB_PATH = "embeddings_3class_balanced.npy"
@@ -60,12 +58,6 @@ def carregar_dados():
 
     return df, embeddings
 
-@st.cache_resource(show_spinner="Treinando classificador...")
-def treinar_classificador(_embeddings, labels):
-    clf = LinearSVC(max_iter=2000, random_state=SEED)
-    clf.fit(_embeddings, labels)
-    return clf
-
 @st.cache_resource(show_spinner="Construindo índice FAISS...")
 def construir_faiss(_embeddings):
     dim = _embeddings.shape[1]
@@ -85,7 +77,7 @@ st.caption("Trabalho Final - Mineração de Textos")
 # carrega tudo
 modelo = carregar_modelo()
 df, embeddings = carregar_dados()
-clf = treinar_classificador(embeddings, df["label"].values)
+
 index = construir_faiss(embeddings)
 
 # sidebar com stats
@@ -132,7 +124,9 @@ if st.button("Analisar", type="primary", disabled=not relato_input.strip()):
         query_emb = modelo.encode([query_limpa]).astype("float32")
 
         # classifica
-        pred_label = clf.predict(query_emb)[0]
+        distancias, indices = index.search(query_emb, k)
+        labels_vizinhos = df.iloc[indices[0]]["label"].values
+        pred_label = pd.Series(labels_vizinhos).value_counts().idxmax()
 
         # busca similares
         distancias, indices = index.search(query_emb, k)
