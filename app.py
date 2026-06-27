@@ -80,7 +80,7 @@ st.set_page_config(
 )
 
 st.title("Analisador de Reclamações - consumidores.gov.br")
-st.caption("Trabalho Final - Mineração de Textos - Dataset balanceado: 15k relatos (5k/classe)")
+st.caption("Trabalho Final - Mineração de Textos")
 
 # carrega tudo
 modelo = carregar_modelo()
