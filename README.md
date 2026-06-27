@@ -223,6 +223,6 @@ Apesar das limitações observadas — especialmente na classificação da class
 ## Autores
 * Letícia Ferreira Silva
 * João Pedro Guervich Varrichio
-* Eduardo
+* Eduardo Yuji Yamagata
 
 Projeto desenvolvido para a disciplina de **Mineração de Textos**.
