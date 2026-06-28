@@ -184,3 +184,106 @@ O F1 geral cai, mas passa a refletir o desempenho real nas 3 classes.
 | Features LLM extraídas | `features_llm.csv` |
 
 **Motivo:** evita recomputação durante a demo ao vivo no notebook.
+
+---
+
+## 13. Lista de palavras mais frequentes - NLTK e spaCy
+
+**Decisão:** listagem das palavras mais frequentes tanto no NLTK quanto no spaCy
+
+**NLTK – tokenização + stopwords**
+
+***Top 30 palavras mais frequentes (NLTK):***
+| Rank | Palavra | Frequência |
+|---|---|---|
+| 1 | dia | 11,725 |
+| 2 | valor | 8,412 |
+| 3 | empresa | 6,516 |
+| 4 | contato | 6,109 |
+| 5 | compra | 5,328 |
+| 6 | pois | 5,074 |
+| 7 | r | 4,978 |
+| 8 | conta | 4,766 |
+| 9 | dias | 4,129 |
+| 10 | pedido | 3,866 |
+| 11 | cartão | 3,829 |
+| 12 | data | 3,744 |
+| 13 | banco | 3,689 |
+| 14 | fiz | 3,679 |
+| 15 | cancelamento | 3,604 |
+| 16 | pagamento | 3,500 |
+| 17 | produto | 3,388 |
+| 18 | site | 3,365 |
+| 19 | porém | 3,299 |
+| 20 | sendo | 3,212 |
+| 21 | recebi | 2,963 |
+| 22 | problema | 2,881 |
+| 23 | reembolso | 2,870 |
+| 24 | após | 2,714 |
+| 25 | fazer | 2,683 |
+| 26 | nome | 2,678 |
+| 27 | entrei | 2,673 |
+| 28 | prazo | 2,665 |
+| 29 | voo | 2,653 |
+| 30 | ainda | 2,586 |
+
+**spaCy – lematização + stopwords**
+
+***Classe: Negativo – termos com maior coeficiente positivo***
+| Rank | Termo | Coef |
+|---|---|---|
+| 1 | hurb | 2.5370 |
+| 2 | pacote | 2.3009 |
+| 3 | dinheiro | 1.5759 |
+| 4 | aparelho | 1.5624 |
+| 5 | samsung | 1.4991 |
+| 6 | datas | 1.4933 |
+| 7 | hotel | 1.4104 |
+| 8 | placa | 1.3404 |
+| 9 | fato | 1.2961 |
+| 10 | 60 dias | 1.2954 |
+| 11 | solução | 1.2722 |
+| 12 | original | 1.2302 |
+| 13 | pacote viagem | 1.2246 |
+| 14 | resposta | 1.2200 |
+| 15 | defeito | 1.1632 |
+
+***Classe: Neutro – termos com maior coeficiente positivo***
+| Rank | Termo | Coef |
+|---|---|---|
+| 1 | pix | 1.0927 |
+| 2 | entregou | 1.0675 |
+| 3 | pagina | 1.0609 |
+| 4 | dívidas | 0.9749 |
+| 5 | constar | 0.9443 |
+| 6 | prazo entrega | 0.9385 |
+| 7 | informação | 0.9356 |
+| 8 | espera | 0.8865 |
+| 9 | descaso | 0.8852 |
+| 10 | inicial | 0.8850 |
+| 11 | determinado | 0.8839 |
+| 12 | cartao | 0.8546 |
+| 13 | várias vezes | 0.8452 |
+| 14 | item | 0.8437 |
+| 15 | riachuelo | 0.8365 |
+
+***Classe: Positivo – termos com maior coeficiente positivo***
+Rank   Termo                                   Coef |
+|---|---|---|
+| 1 | passagem | 2.2484 |
+| 2 | internet | 2.2134 |
+| 3 | plano | 2.1495 |
+| 4 | azul | 1.9181 |
+| 5 | tim | 1.9045 |
+| 6 | voo | 1.7204 |
+| 7 | fatura | 1.6996 |
+| 8 | remarcação | 1.6645 |
+| 9 | instalação | 1.3201 |
+| 10 | alteração | 1.2745 |
+| 11 | titularidade | 1.2453 |
+| 12 | mudança | 1.2193 |
+| 13 | olá | 1.1679 |
+| 14 | latam | 1.1584 |
+| 15 | pontos | 1.1441 |
+
+**Motivo:** verificar como a tokenização funciona e como pode auxiliar na análise de sentimentos.
