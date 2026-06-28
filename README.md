@@ -48,6 +48,8 @@ Como a classe **Neutro** possui quantidade significativamente menor de exemplos,
 * GROQ
 * .env
 * Pydantic
+* NLTK
+* spaCy
 
 ---
 
@@ -94,6 +96,8 @@ paraphrase-multilingual-mpnet-base-v2
 8. Novo treinamento dos classificadores.
 
 9. Comparação entre os resultados obtidos.
+
+10. Lista de palavras mais frequentes - NLTK e spaCy
 
 ---
 
@@ -182,7 +186,7 @@ source .venv/bin/activate
 ### Instalar dependências
 
 ```bash
-pip install ollama pydantic sentence-transformers scikit-learn pandas numpy tiktoken
+pip install ollama pydantic sentence-transformers scikit-learn pandas numpy tiktoken dotenv groq
 ```
 
 ### Executar o pipeline
@@ -223,6 +227,6 @@ Apesar das limitações observadas — especialmente na classificação da class
 ## Autores
 * Letícia Ferreira Silva
 * João Pedro Guervich Varrichio
-* Eduardo
+* Eduardo Yuji Yamagata
 
 Projeto desenvolvido para a disciplina de **Mineração de Textos**.
