@@ -121,13 +121,13 @@ print("CONCLUSÃO")
 print("=" * 60)
 print(f"""
 Para {N_ELEMENTOS:,} elementos (escopo do trabalho):
-  - gemini-2.5-flash é o mais econômico
+  - gemini-2.5-flash é o mais econômico (~R$ 1.62)
   - Diferença entre modelos é mínima nessa escala
 
 Para o dataset completo (200k elementos):
   - gemini-2.5-flash é o recomendado por custo/benefício
   - gemini-3.1-pro-preview é ~20x mais caro que o flash
 
-Escolha adotada no trabalho: Ollama local (Llama 3.2) — custo zero,
-sem dependência de API externa, viável para fins acadêmicos.
+Escolha adotada no trabalho: Llama 3.1 8B via Groq API (plano gratuito),
+com rate limit de 6k tokens/minuto e 500k tokens/dia.
 """)

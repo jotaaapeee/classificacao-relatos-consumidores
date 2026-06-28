@@ -1,50 +1,60 @@
-# Resultados - Extração de Features com LLM (Llama 3.2)
+# Resultados — Extração de Features com LLM
 
-Dataset: consumidores.gov.br · 15k registros balanceados (5k/classe) https://www.kaggle.com/datasets/beatrizmsarmento/relatos-de-consumidores-do-site-consumidor-gov-br
-Schema: Pydantic com 5 campos estruturados
-Modelo: `llama3.2` via Ollama
+Dataset: consumidores.gov.br · 15k registros balanceados (5k/classe)
+https://www.kaggle.com/datasets/beatrizmsarmento/relatos-de-consumidores-do-site-consumidor-gov-br
+
+Schema: Pydantic com 6 campos estruturados (incluindo classificação zero-shot)
 
 ---
 
-## Experimento 1 - Notebook (CPU)
+## Pipeline Unificado — Groq API (llama-3.1-8b-instant)
 
-**Hardware:** Ryzen 7 5825u · 16GB RAM · sem GPU
-**N_SUBAMOSTRA:** 50 relatos
-**Velocidade:** ~10s/req
-**Taxa de erro:** 2/50 = 4.0%
-**Extraídos com sucesso:** 49
+**N_SUBAMOSTRA:** 500 relatos  
+**Extraídos com sucesso:** 414 | **Erros:** 87 (17.4% — rate limit a partir de ~420 chamadas)  
+**Vetorização:** TF-IDF (10k features, bigrams, sublinear_tf)
 
-### Comparação F1
+### Resumo Comparativo
 
-| Configuração | F1 weighted |
-|---|---|
-| Embedding puro | 0.3619 |
-| Embedding + LLM features | 0.4143 |
+| Configuração | F1 weighted | Relatos |
+|---|---|---|
+| Baseline (TF-IDF + LR) | 0.4818 | 15k |
+| TF-IDF + LLM features | 0.3684 | 414 |
+| Zero-shot LLM | 0.2371 | 414 |
 
-**Ganho:** +0.052
-
-### Classification Report - Embedding puro
+### Classification Report — Baseline (TF-IDF + LR)
 
 ```
               precision    recall  f1-score   support
-    Negativo       0.67      0.50      0.57         4
-      Neutro       0.00      0.00      0.00         3
-    Positivo       0.33      0.67      0.44         3
-    accuracy                           0.40        10
-   macro avg       0.33      0.39      0.34        10
-weighted avg       0.37      0.40      0.36        10
+    Negativo       0.52      0.50      0.51      1000
+      Neutro       0.42      0.42      0.42      1000
+    Positivo       0.51      0.52      0.52      1000
+    accuracy                           0.48      3000
+   macro avg       0.48      0.48      0.48      3000
+weighted avg       0.48      0.48      0.48      3000
 ```
 
-### Classification Report - Embedding + LLM features
+### Classification Report — TF-IDF + LLM features
 
 ```
               precision    recall  f1-score   support
-    Negativo       0.67      0.50      0.57         4
-      Neutro       0.33      0.33      0.33         3
-    Positivo       0.25      0.33      0.29         3
-    accuracy                           0.40        10
-   macro avg       0.42      0.39      0.40        10
-weighted avg       0.44      0.40      0.41        10
+    Negativo       0.44      0.47      0.46        34
+      Neutro       0.39      0.55      0.46        33
+    Positivo       0.00      0.00      0.00        16
+    accuracy                           0.41        83
+   macro avg       0.28      0.34      0.30        83
+weighted avg       0.34      0.41      0.37        83
+```
+
+### Classification Report — Zero-shot LLM
+
+```
+              precision    recall  f1-score   support
+    Negativo       0.40      1.00      0.58       167
+      Neutro       0.00      0.00      0.00       167
+    Positivo       1.00      0.01      0.02        80
+    accuracy                           0.41       414
+   macro avg       0.47      0.34      0.20       414
+weighted avg       0.36      0.41      0.24       414
 ```
 
 ### Distribuição das features extraídas
@@ -52,104 +62,36 @@ weighted avg       0.44      0.40      0.41        10
 **categoria_problema**
 | Categoria | Count |
 |---|---|
-| atendimento ruim | 16 |
-| cobrança indevida | 16 |
-| cancelamento | 7 |
-| outro | 4 |
-| atraso na entrega | 3 |
-| produto com defeito | 2 |
-| fraude | 1 |
+| atendimento ruim | 123 |
+| cobrança indevida | 122 |
+| cancelamento | 76 |
+| atraso na entrega | 45 |
+| produto com defeito | 31 |
+| fraude | 11 |
+| outro | 6 |
 
 **tom**
 | Tom | Count |
 |---|---|
-| frustrado | 24 |
-| furioso | 21 |
-| neutro | 2 |
+| furioso | 386 |
+| frustrado | 25 |
 | satisfeito | 2 |
+| neutro | 1 |
 
 **complexidade**
 | Complexidade | Count |
 |---|---|
-| alta | 26 |
-| baixa | 23 |
-
----
-
-## Experimento 2 - PC com GPU (referência)
-
-**Hardware:** RTX 3060 12GB · Ollama 0.9.x com CUDA
-**N_SUBAMOSTRA:** 500 relatos
-**Velocidade:** ~0.8s/req
-**Taxa de erro:** 36/500 = 7.2%
-**Extraídos com sucesso:** 465 (após descarte de 1 por índice)→ 464 usados
-
-### Comparação F1
-
-| Configuração | F1 weighted |
-|---|---|
-| Embedding puro | 0.3189 |
-| Embedding + LLM features | 0.4058 |
-
-**Ganho:** +0.087
-
-### Classification Report - Embedding puro
-
-```
-              precision    recall  f1-score   support
-    Negativo       0.29      0.22      0.25        32
-      Neutro       0.42      0.47      0.44        30
-    Positivo       0.25      0.29      0.27        31
-    accuracy                           0.32        93
-   macro avg       0.32      0.33      0.32        93
-weighted avg       0.32      0.32      0.32        93
-```
-
-### Classification Report - Embedding + LLM features
-
-```
-              precision    recall  f1-score   support
-    Negativo       0.44      0.44      0.44        32
-      Neutro       0.45      0.50      0.48        30
-    Positivo       0.32      0.29      0.31        31
-    accuracy                           0.41        93
-   macro avg       0.40      0.41      0.41        93
-weighted avg       0.40      0.41      0.41        93
-```
-
-### Distribuição das features extraídas
-
-**categoria_problema**
-| Categoria | Count |
-|---|---|
-| atendimento ruim | 196 |
-| cobrança indevida | 152 |
-| cancelamento | 42 |
-| produto com defeito | 28 |
-| atraso na entrega | 24 |
-| outro | 14 |
-| fraude | 9 |
-
-**tom**
-| Tom | Count |
-|---|---|
-| frustrado | 250 |
-| furioso | 202 |
-| neutro | 10 |
-| satisfeito | 3 |
-
-**complexidade**
-| Complexidade | Count |
-|---|---|
-| alta | 298 |
-| baixa | 167 |
+| alta | 380 |
+| baixa | 26 |
+| média | 8 |
 
 ---
 
 ## Observações
 
-- O LLM agregou ganho consistente de F1 nos dois experimentos (+0.052 no notebook, +0.087 no PC)
-- A classe Neutro foi a mais beneficiada pelas features do LLM, recall subiu de 0.47 → 0.50 no PC
-- 87–90% dos relatos classificados como `frustrado` ou `furioso`, padrão esperado em canal de reclamações
-- `atendimento ruim` e `cobrança indevida` dominam as categorias (~75% dos casos)
-- Taxa de erro de JSON malformado maior no PC (7.2%) do que no notebook (4.0%), possivelmente relacionada ao aquecimento do modelo após muitas chamadas consecutivas
+- **Baseline TF-IDF + LR supera ambas as abordagens LLM** — com 15k exemplos rotulados, o classificador clássico é mais robusto
+- **TF-IDF + LLM features (0.3684)** ficou abaixo do baseline por limitação de subamostra (414 relatos vs 12k de treino) e erros de rate limit que prejudicaram a distribuição das classes
+- **Zero-shot (0.2371)** apresentou viés forte para a classe Negativo (recall 1.00), ignorando Neutro e Positivo — comportamento esperado em modelos menores (8B) sem exemplos de calibração
+- **Rate limit Groq** (6k tokens/min no plano gratuito) causou 87 erros a partir de ~420 chamadas — recomendado `time.sleep(6)` para execuções futuras
+- **Campo `tom`** apresentou colapso semântico no Groq: 386 "furioso" vs 25 "frustrado", sugerindo que o modelo de 8B não distingue bem os dois tons em português
+- `atendimento ruim` e `cobrança indevida` dominam as categorias (~59% dos casos), consistente com execuções anteriores

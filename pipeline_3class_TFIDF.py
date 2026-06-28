@@ -3,11 +3,12 @@ import re
 import os
 import numpy as np
 import pandas as pd
-from sentence_transformers import SentenceTransformer
 from sklearn.svm import LinearSVC
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, f1_score
+from sklearn.feature_extraction.text import TfidfVectorizer
+
 
 CAMINHO_JSON = "dados2025.json"
 N_POR_CLASSE = 5_000 # undersampling balanceado
@@ -72,37 +73,30 @@ print(f"\nDistribuição de labels:")
 print(df["label"].value_counts().rename({0: "Negativo (0)", 1: "Neutro (1)", 2: "Positivo (2)"}).to_string())
 
 print("\n" + "=" * 55)
-print("ETAPA 3 - Embeddings")
+print("ETAPA 3 - TF IDF")
 print("=" * 55)
 
-if os.path.exists(EMB_SAVE_PATH):
-    print(f"Carregando embeddings salvos de '{EMB_SAVE_PATH}'...")
-    embeddings = np.load(EMB_SAVE_PATH)
-else:
-    print(f"Modelo: {MODEL_NAME}")
-    print("Vetorizando...")
-    model = SentenceTransformer(MODEL_NAME)
-    embeddings = model.encode(
-        df["texto"].tolist(),
-        batch_size=64,
-        show_progress_bar=True,
-    )
-    np.save(EMB_SAVE_PATH, embeddings)
-    print(f"Embeddings salvos em '{EMB_SAVE_PATH}'")
+tfidf = TfidfVectorizer(
+    max_features=10_000,
+    sublinear_tf=True,      # log(tf) em vez de tf bruto
+    min_df=2,               # ignora termos que aparecem em menos de 2 docs
+    ngram_range=(1, 2),     # unigrams + bigrams
+)
 
-print(f"Shape dos embeddings: {embeddings.shape}")
+X = tfidf.fit_transform(df["texto"])
+print(f"Shape TF-IDF: {X.shape}")
 
 print("\n" + "=" * 55)
 print("ETAPA 4 - Baseline ML")
 print("=" * 55)
 
-X = embeddings
+
 y = df["label"].values
 
 X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, random_state=SEED, stratify=y
 )
-print(f"Treino: {len(X_train):,} | Teste: {len(X_test):,}")
+print(f"Treino: {X_train.shape[0]:,} | Teste: {X_test.shape[0]:,}")
 
 modelos = {
     "Logistic Regression": LogisticRegression(max_iter=1000, random_state=SEED),

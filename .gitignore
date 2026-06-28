@@ -9,6 +9,7 @@ __pycache__/
 # Data
 dados2025.json
 *.npy
+*.csv
 
 # Distribution / packaging
 .Python

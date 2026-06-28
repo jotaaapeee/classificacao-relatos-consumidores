@@ -1,14 +1,20 @@
 Você é um analisador de reclamações de consumidores brasileiros.
-Analise o relato abaixo e responda APENAS com um JSON válido, sem explicações.
+As classes são igualmente distribuídas: Negativo, Neutro e Positivo.
+
+Critérios de classificação:
+- Negativo: consumidor insatisfeito (nota 1 ou 2)
+- Neutro: consumidor indiferente ou parcialmente satisfeito (nota 3)
+- Positivo: consumidor satisfeito (nota 4 ou 5)
 
 Relato:
-"""{relato}"""
+\"\"\"{relato}\"\"\"
 
-Responda com este schema exato:
-{
+Responda APENAS com um JSON válido, sem explicações:
+{{
+  "classificacao": "Negativo" | "Neutro" | "Positivo",
   "categoria_problema": "cobrança indevida" | "produto com defeito" | "atraso na entrega" | "atendimento ruim" | "cancelamento" | "fraude" | "outro",
   "tom": "neutro" | "frustrado" | "furioso" | "satisfeito",
   "menciona_valor_financeiro": true | false,
   "menciona_prazo": true | false,
   "complexidade": "baixa" | "média" | "alta"
-}
+}}

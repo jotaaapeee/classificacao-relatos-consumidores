@@ -45,8 +45,8 @@ Como a classe **Neutro** possui quantidade significativamente menor de exemplos,
 * NumPy
 * Scikit-Learn
 * Sentence Transformers
-* Ollama
-* Llama 3.2
+* GROQ
+* .env
 * Pydantic
 
 ---
