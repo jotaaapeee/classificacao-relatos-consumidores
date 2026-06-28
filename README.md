@@ -85,15 +85,17 @@ paraphrase-multilingual-mpnet-base-v2
    * Logistic Regression
    * LinearSVC
 
-5. Extração de features semânticas utilizando o Llama 3.2 via Ollama.
+5. Medição por TF-IDF seja pela regressão logística ou pela análise de frequência de palavras por NKTL ou spaCy
 
-6. Conversão das informações extraídas para variáveis estruturadas utilizando Pydantic.
+6. Extração de features semânticas utilizando o Llama 3.2 via Ollama.
 
-7. Concatenação das novas features aos embeddings.
+7. Conversão das informações extraídas para variáveis estruturadas utilizando Pydantic.
 
-8. Novo treinamento dos classificadores.
+8. Concatenação das novas features aos embeddings.
 
-9. Comparação entre os resultados obtidos.
+9. Novo treinamento dos classificadores.
+
+10. Comparação entre os resultados obtidos.
 
 ---
 
@@ -182,7 +184,8 @@ source .venv/bin/activate
 ### Instalar dependências
 
 ```bash
-pip install ollama pydantic sentence-transformers scikit-learn pandas numpy tiktoken
+pip install ollama pydantic sentence-transformers scikit-learn pandas numpy tiktoken nltk spacy typing
+python -m spacy download pt_core_news_sm
 ```
 
 ### Executar o pipeline
