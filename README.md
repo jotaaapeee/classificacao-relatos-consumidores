@@ -1,6 +1,6 @@
 # Classificação de Relatos de Consumidores com Embeddings e LLM
 
-Projeto desenvolvido para a disciplina de **Mineração de Textos**, com o objetivo de realizar a classificação automática de relatos de consumidores utilizando técnicas de Processamento de Linguagem Natural (PLN), aprendizado de máquina e modelos de linguagem (LLMs).
+Projeto desenvolvido para a disciplina de **Mineração de Textos**, com o objetivo de realizar a classificação automática de relatos de consumidores utilizando técnicas de Processamento de Linguagem Natural (PLN), aprendizado de máquina, modelos de linguagem (LLMs) e recuperação semântica (RAG).
 
 ---
 
@@ -8,11 +8,11 @@ Projeto desenvolvido para a disciplina de **Mineração de Textos**, com o objet
 
 Construir um pipeline de classificação supervisionada capaz de identificar o sentimento de relatos de consumidores utilizando:
 
-* Embeddings semânticos;
-* Modelos clássicos de Machine Learning;
-* Extração de informações estruturadas por meio de um LLM executado localmente.
-
-Além da classificação tradicional, o projeto avalia se informações extraídas por um modelo de linguagem podem melhorar o desempenho do classificador.
+* Vetorização TF-IDF e embeddings semânticos
+* Modelos clássicos de Machine Learning
+* Extração de informações estruturadas via LLM com validação Pydantic
+* Classificação zero-shot via LLM
+* Recuperação semântica com RAG (LlamaIndex)
 
 ---
 
@@ -29,7 +29,7 @@ Características do conjunto de dados:
 A classificação foi organizada em três classes:
 
 | Nota | Classe   |
-| ---- | -------- |
+|------|----------|
 | 1–2  | Negativo |
 | 3    | Neutro   |
 | 4–5  | Positivo |
@@ -41,15 +41,13 @@ Como a classe **Neutro** possui quantidade significativamente menor de exemplos,
 ## Tecnologias Utilizadas
 
 * Python
-* Pandas
-* NumPy
+* Pandas / NumPy
 * Scikit-Learn
 * Sentence Transformers
-* GROQ
-* .env
+* LlamaIndex
+* Groq API (Llama 3.1 8B)
 * Pydantic
-* NLTK
-* spaCy
+* python-dotenv
 
 ---
 
@@ -57,14 +55,16 @@ Como a classe **Neutro** possui quantidade significativamente menor de exemplos,
 
 ```
 .
-├── pipeline-3class.py           # Pipeline utilizando apenas embeddings
-├── pipeline-3class-llm.py       # Pipeline com embeddings + features do LLM
-├── custo.py                     # Utilitário de cálculo
-├── extract_feats.txt            # Prompt utilizado na extração
-├── DECISIONS.md                 # Decisões de projeto
-├── ERRORS_N_INSIGHTS.md         # Análise de erros e insights
-├── LOGS.md                      # Resultados experimentais
-├── PYDANTIC.md                  # Esquema das features extraídas
+├── pipeline-3class.py           # Pipeline com TF-IDF + classificadores baseline
+├── pipeline-3class-llm.py       # Pipeline unificado: TF-IDF + LLM features + zero-shot
+├── rag_llamaindex.py            # RAG com LlamaIndex — comparação de estratégias de chunking
+├── custo.py                     # Estimativa de custo com Gemini API
+├── prompts/
+│   └── extract_feats.txt        # Prompt utilizado na extração de features
+├── DECISIONS.md                 # Decisões técnicas de projeto
+├── ERRORS_N_INSIGHTS.md         # Análise de erros e insights acionáveis
+├── LOGS.md                      # Resultados completos dos experimentos
+├── PYDANTIC.md                  # Esquema das features extraídas pelo LLM
 └── README.md
 ```
 
@@ -74,37 +74,23 @@ Como a classe **Neutro** possui quantidade significativamente menor de exemplos,
 
 O fluxo do projeto é composto pelas seguintes etapas:
 
-1. Carregamento do dataset
-2. Balanceamento das classes
-3. Geração dos embeddings utilizando o modelo:
-
-```
-paraphrase-multilingual-mpnet-base-v2
-```
-
-4. Treinamento dos classificadores baseline:
-
-   * Logistic Regression
-   * LinearSVC
-
-5. Extração de features semânticas utilizando o Llama 3.2 via Ollama.
-
-6. Conversão das informações extraídas para variáveis estruturadas utilizando Pydantic.
-
-7. Concatenação das novas features aos embeddings.
-
-8. Novo treinamento dos classificadores.
-
-9. Comparação entre os resultados obtidos.
-
-10. Lista de palavras mais frequentes - NLTK e spaCy
+1. Carregamento do dataset e undersampling balanceado (5k/classe)
+2. Pré-processamento (remoção de URLs, normalização de espaços)
+3. Vetorização com TF-IDF (10k features, bigrams, sublinear_tf)
+4. Treinamento dos classificadores baseline (Logistic Regression e LinearSVC)
+5. Extração combinada de features + classificação zero-shot via Groq API (Llama 3.1 8B)
+6. Validação das saídas do LLM com schema Pydantic
+7. Concatenação das features ao TF-IDF e novo treinamento
+8. Comparação de resultados: baseline vs. features LLM vs. zero-shot
+9. RAG com LlamaIndex: indexação de relatos e comparação de estratégias de chunking
 
 ---
 
 ## Features Extraídas pelo LLM
 
-Cada relato foi convertido em cinco atributos estruturados:
+Cada relato foi convertido em seis atributos estruturados em uma única chamada à API:
 
+* Classificação zero-shot (Negativo / Neutro / Positivo)
 * Categoria do problema
 * Tom emocional
 * Menção a valor financeiro
@@ -117,33 +103,31 @@ Essas informações foram validadas automaticamente utilizando um schema Pydanti
 
 ## Resultados
 
-### Baseline
+### Pipeline de Classificação
 
-| Modelo              | F1 Weighted |
-| ------------------- | ----------: |
-| Logistic Regression |      0.4619 |
-| LinearSVC           |      0.4637 |
+| Configuração | F1 Weighted | Relatos |
+|---|---|---|
+| Baseline (TF-IDF + LR) | **0.4818** | 15k |
+| TF-IDF + LLM features | 0.3684 | 414 |
+| Zero-shot LLM | 0.2371 | 414 |
 
-### Embeddings + LLM
+### RAG com LlamaIndex (500 relatos, 5 perguntas)
 
-| Configuração                | F1 Weighted |
-| --------------------------- | ----------: |
-| Embedding puro              |      0.3189 |
-| Embedding + Features do LLM |  **0.4058** |
-
-A utilização das informações estruturadas extraídas pelo modelo de linguagem proporcionou um ganho aproximado de **0,087 pontos de F1 Weighted**.
+| Estratégia | Nodes indexados | keyword_recall médio | avg_score médio |
+|---|---|---|---|
+| hierárquico | 1446 | **0.200** | **0.564** |
+| overlap | 734 | 0.000 | 0.538 |
+| fixo | 715 | 0.000 | 0.533 |
 
 ---
 
 ## Principais Decisões
 
-Durante o desenvolvimento foram tomadas algumas decisões importantes:
-
-* utilização de três classes (Negativo, Neutro e Positivo);
-* balanceamento por undersampling;
-* uso de embeddings multilíngues;
-* utilização do Llama 3.2 executado localmente;
-* validação das respostas do LLM utilizando Pydantic.
+* TF-IDF superou embeddings densos no baseline (F1 0.4818 vs 0.4619)
+* Undersampling balanceado (5k/classe) para tratar desbalanceamento do Neutro
+* LLM via Groq API para portabilidade — sem dependência de hardware local
+* Extração combinada (features + zero-shot) em uma única chamada para economizar tokens
+* Chunking hierárquico com `chunk_sizes=[512, 256, 128]` obteve melhor recall no RAG
 
 As justificativas completas encontram-se no arquivo **DECISIONS.md**.
 
@@ -151,11 +135,10 @@ As justificativas completas encontram-se no arquivo **DECISIONS.md**.
 
 ## Principais Desafios
 
-Durante os experimentos foram observados alguns problemas relevantes:
-
-* respostas do LLM ocasionalmente retornavam JSON inválido;
-* dificuldade do modelo em classificar corretamente relatos da classe Neutro;
-* divergência entre o sentimento expresso no texto e a nota atribuída pelo consumidor.
+* Rate limit do Groq (6k tokens/min) causou 17.4% de erros em 500 chamadas consecutivas
+* Zero-shot com viés forte para classe Negativo — modelo não calibrado para dataset balanceado
+* Classe Neutro semanticamente difusa — F1 consistentemente mais baixo (~0.40–0.42)
+* Corpus de relatos semanticamente homogêneo dificulta diferenciação entre estratégias de chunking no RAG
 
 Essas análises encontram-se detalhadas em **ERRORS_N_INSIGHTS.md**.
 
@@ -171,60 +154,67 @@ python -m venv .venv
 
 ### Ativar ambiente
 
-Windows
-
-```bash
-.venv\Scripts\activate
-```
-
-Linux / Mac
-
+Linux / Mac:
 ```bash
 source .venv/bin/activate
+```
+
+Windows:
+```bash
+.venv\Scripts\activate
 ```
 
 ### Instalar dependências
 
 ```bash
-pip install ollama pydantic sentence-transformers scikit-learn pandas numpy tiktoken dotenv groq
+pip install groq pydantic sentence-transformers scikit-learn pandas numpy tiktoken python-dotenv llama-index llama-index-embeddings-huggingface
 ```
 
-### Executar o pipeline
+### Configurar variáveis de ambiente
 
-Sem LLM
+Crie um arquivo `.env` na raiz do projeto:
+```
+GROQ_API_KEY=sua_chave_aqui
+```
 
+### Executar
+
+Pipeline baseline (TF-IDF):
 ```bash
 python pipeline-3class.py
 ```
 
-Com LLM
-
+Pipeline unificado com LLM:
 ```bash
 python pipeline-3class-llm.py
+```
+
+RAG com LlamaIndex:
+```bash
+python rag_llamaindex.py
 ```
 
 ---
 
 ## Arquivos de Apoio
 
-| Arquivo              | Descrição                                     |
-| -------------------- | --------------------------------------------- |
-| DECISIONS.md         | Justificativas técnicas das decisões adotadas |
-| ERRORS_N_INSIGHTS.md | Análise de erros e oportunidades de melhoria  |
-| LOGS.md              | Resultados completos dos experimentos         |
-| PYDANTIC.md          | Estrutura das features extraídas pelo LLM     |
+| Arquivo | Descrição |
+|---|---|
+| DECISIONS.md | Justificativas técnicas das decisões adotadas |
+| ERRORS_N_INSIGHTS.md | Análise de erros e insights acionáveis |
+| LOGS.md | Resultados completos dos experimentos |
+| PYDANTIC.md | Estrutura das features extraídas pelo LLM |
 
 ---
 
 ## Conclusão
 
-Os experimentos demonstraram que a combinação entre embeddings semânticos e informações estruturadas extraídas por um modelo de linguagem pode melhorar o desempenho de classificadores tradicionais em tarefas de mineração de textos.
-
-Apesar das limitações observadas — especialmente na classificação da classe Neutro e na geração ocasional de respostas inválidas pelo LLM — os resultados indicam que a utilização de modelos de linguagem como etapa complementar de engenharia de atributos representa uma abordagem promissora para aplicações de Processamento de Linguagem Natural em português.
+Os experimentos demonstraram que o baseline TF-IDF + Logistic Regression supera as abordagens LLM com dados rotulados suficientes (15k relatos, F1 0.4818). O LLM agrega valor como ferramenta de extração de features estruturadas, mas requer volume maior de amostras para superar o baseline. O RAG com chunking hierárquico obteve o melhor desempenho de recuperação entre as estratégias testadas.
 
 ---
 
 ## Autores
+
 * Letícia Ferreira Silva
 * João Pedro Guervich Varrichio
 * Eduardo Yuji Yamagata
