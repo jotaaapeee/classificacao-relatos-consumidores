@@ -1,18 +1,20 @@
 # Schema Pydantic — Extração de Features de Relatos
 
+**Decisão:** schema Pydantic com 6 campos, incluindo classificação zero-shot na mesma chamada
+
 **Campos extraídos:**
-- `categoria_problema`: 7 categorias (cobrança indevida, produto com defeito, atraso na entrega, atendimento ruim, cancelamento, fraude, outro)
+- `classificacao`: Negativo / Neutro / Positivo (zero-shot)
+- `categoria_problema`: 7 categorias
 - `tom`: neutro / frustrado / furioso / satisfeito
 - `menciona_valor_financeiro`: bool
 - `menciona_prazo`: bool
 - `complexidade`: baixa / média / alta
 
-**Motivo da escolha dos campos:** cobrem as dimensões semânticas mais relevantes para prever satisfação, tipo do problema, urgência emocional e complexidade operacional.
+**Motivo da unificação:** extrair features e classificação zero-shot na mesma chamada reduz o consumo de tokens e o tempo de execução à metade em relação a duas chamadas separadas.
 
-**Resultado (500 relatos, dataset balanceado 3 classes):**
+**Resultado (414 relatos válidos, dataset balanceado 3 classes):**
 | Configuração | F1 weighted |
 |---|---|
-| Embedding puro | 0.3189 |
-| Embedding + LLM features | 0.4058 |
-
-Ganho de +0.087 com a adição das features do LLM.
+| TF-IDF puro | 0.4818 (15k) |
+| TF-IDF + LLM features | 0.3684 (414) |
+| Zero-shot LLM | 0.2371 (414) |

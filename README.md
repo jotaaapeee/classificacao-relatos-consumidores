@@ -18,7 +18,8 @@ Construir um pipeline de classificação supervisionada capaz de identificar o s
 
 ## Dataset
 
-Foi utilizado o dataset público de reclamações do **Consumidor.gov.br**, disponível no Kaggle.
+Foi utilizado o dataset público de reclamações do **consumidor.gov.br**, disponível no Kaggle.
+Link: https://www.kaggle.com/datasets/beatrizmsarmento/relatos-de-consumidores-do-site-consumidor-gov-br
 
 Características do conjunto de dados:
 
@@ -179,20 +180,21 @@ GROQ_API_KEY=sua_chave_aqui
 
 ### Executar
 
-Pipeline baseline (TF-IDF):
+Pipeline baseline (TF-IDF) + LLM:
 ```bash
-python pipeline-3class.py
-```
-
-Pipeline unificado com LLM:
-```bash
-python pipeline-3class-llm.py
+python pipeline-3class-llm_TFIDF
 ```
 
 RAG com LlamaIndex:
 ```bash
-python rag_llamaindex.py
+python rag.py
 ```
+
+TF-IDF com NLTK e spaCy para testes:
+```bash
+python pipeline-3class-NLTK_spaCy-TFIDF.py
+```
+
 
 ---
 

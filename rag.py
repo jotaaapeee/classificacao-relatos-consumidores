@@ -6,9 +6,6 @@ Compara 3 estratégias de chunking sobre os relatos do consumidores.gov.br:
   1. Chunking fixo (SentenceSplitter, sem overlap)
   2. Chunking fixo com overlap
   3. Chunking hierárquico
-
-Instalação:
-  pip install llama-index llama-index-embeddings-huggingface sentence-transformers pandas
 """
 
 import json
